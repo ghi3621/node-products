@@ -1,67 +1,140 @@
 import express from "express";
-
 // Express.js의 라우터를 생성합니다.
 const router = express.Router();
 
 // 1. mongoose,  Products 모델 가져오기
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 import Products from "../schemas/products.schema.js";
 
+// 1. 상품 작성 (POST)
 router.post("/products", async (req, res) => {
-  // 1. 클라이언트로 부터 받아온 value 데이터를 가져온다.
-  const { productsId, title, content, author, password } = req.body;
+  try {
+    if (!req.body) {
+      return res
+        .status(400)
+        .json({ errorMessage: "데이터 형식이 올바르지 않습니다." });
+    }
 
-  if (!title) {
-    return res
-      .status(400)
-      .json({ errorMessage: "상품명 형식이 올바르지 않습니다." });
-  } else if (!content) {
-    return res
-      .status(400)
-      .json({ errorMessage: "작성 내용 형식이 올바르지 않습니다." });
-  } else if (!author) {
-    return res
-      .status(400)
-      .json({ errorMessage: "작성자명 형식이 올바르지 않습니다." });
-  } else if (!password) {
-    return res
-      .status(400)
-      .json({ errorMessage: "비밀번호가 올바르지 않습니다." });
+    const { title, content, author, password } = req.body;
+
+    const newProducts = new Products({
+      title,
+      content,
+      author,
+      password,
+    });
+    await newProducts.save();
+    res.status(201).json({ errorMessage: "판매 상품을 등록하였습니다." });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ errorMessage: "예기치 못한 에러가 발생하였습니다." });
   }
+});
 
-  const products = await Products.find({ productsId: productsId }).exec();
-
-  if (products.length) {
-    return res
-      .status(400)
-      .json({ errorMessage: "데이터 형식이 올바르지 않습니다." });
+// 2. 상품 목록 조회 (GET)
+router.get("/products", async (req, res) => {
+  try {
+    const products = await Products.find()
+      .select("_id title author status createdAt")
+      .sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ errorMessage: "예기치 못한 에러가 발생하였습니다." });
   }
+});
 
-  const createdProducts = await Products.create({
-    productsId: productsId,
-    title: title,
-    content: content,
-    author: author,
-    password: password,
-  });
+// 3. 상품 상세 조회 (GET)
+router.get("/products/:productsId", async (req, res) => {
+  try {
+    const products = await Products.findById(req.params.productsId).select(
+      "_id title author status createdAt"
+    );
 
-  // 2. 해당하면 마지막 order 데이터를 조회한다.
-  //findOne은 한개의 데이터만 조회한다.
-  // sort -> 어떤 컬럼(필드)를? 정렬해?
-  // const productMaxOrder = await Products.findOne().sort("-status").exec(); // (-) 내림차순
+    if (!products) {
+      return res
+        .status(404)
+        .json({ errorMessage: "상품 조회에 실패하였습니다." });
+    }
+    res.json(products);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ errorMessage: "예기치 못한 에러가 발생하였습니다." });
+  }
+});
 
-  // 3. 만약 존재 (?)한다면 현재 해야 할 일을 +1 하고,
-  // order 데이터가 존재하지 않는다면, 1로 할당
-  // const createdAt = productMaxOrder
-  //   ? productMaxOrder.status + "for_sale"
-  //   : "sold_out"; //과제에 status
+// 4,  상품 수정 (PUT)
+router.delete("/products/:productsId", async (req, res) => {
+  try {
+    if (!req.body || !req.params) {
+      return res
+        .status(400)
+        .json({ errorMessage: "데이터 형식이 올바르지 않습니다." });
+    }
 
-  // 4. 해야 할 일 등록
-  // const products = new Products({ title, status, content, author, password }); // instance를 만든거임.
-  // await products.save(); //실제 DB에 저장한다.
+    const { title, content, password, status } = req.body;
+    const products = await Products.findById(req.params.productsId);
 
-  // 5. 해야 할 일을 클라이언트에게 반환한다.
-  return res.status(201).json({ products: createdProducts });
+    if (!products) {
+      return res
+        .status(404)
+        .json({ errorMessage: "상품 조회에 실패하였습니다." });
+    }
+
+    if (password !== products.password) {
+      return res
+        .status(401)
+        .json({ errorMessage: "상품을 수정할 권한이 존재하지 않습니다." });
+    }
+
+    products.title = title;
+    products.content = content;
+    products.status = status;
+
+    await products.save();
+    res.json({ message: "상품 정보를 수정하였습니다." });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ errorMessage: "예기치 못한 에러가 발생하였습니다." });
+  }
+});
+
+// 5. 상품 삭제 (DELETE)
+router.put("/products/:productsId", async (req, res) => {
+  try {
+    if (!req.body || !req.params) {
+      return res
+        .status(400)
+        .json({ errorMessage: "데이터 형식이 올바르지 않습니다." });
+    }
+
+    const productsId = req.params.productsId;
+    const { password } = req.body;
+    const products = await Products.findById(req.params.productsId);
+
+    if (!products) {
+      return res
+        .status(404)
+        .json({ errorMessage: "상품 조회에 실패하였습니다." });
+    }
+
+    if (password !== products.password) {
+      return res
+        .status(401)
+        .json({ errorMessage: "상품을 수정할 권한이 존재하지 않습니다." });
+    }
+
+    await products.deleteOne({ id: productsId });
+    res.json({ message: "상품을 삭제하였습니다." });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ errorMessage: "예기치 못한 에러가 발생하였습니다." });
+  }
 });
 
 export default router;
