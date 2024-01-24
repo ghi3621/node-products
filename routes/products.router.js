@@ -1,21 +1,18 @@
 import express from "express";
-// Express.js의 라우터를 생성합니다.
 const router = express.Router();
 
-// 1. mongoose,  Products 모델 가져오기
-// import mongoose from "mongoose";
 import Products from "../schemas/products.schema.js";
 
 // 1. 상품 작성 (POST)
 router.post("/products", async (req, res) => {
   try {
+    const { title, content, author, password } = req.body;
+
     if (!req.body) {
       return res
         .status(400)
         .json({ errorMessage: "데이터 형식이 올바르지 않습니다." });
     }
-
-    const { title, content, author, password } = req.body;
 
     const newProducts = new Products({
       title,
@@ -23,6 +20,7 @@ router.post("/products", async (req, res) => {
       author,
       password,
     });
+
     await newProducts.save();
     res.status(201).json({ errorMessage: "판매 상품을 등록하였습니다." });
   } catch (error) {
@@ -37,7 +35,8 @@ router.get("/products", async (req, res) => {
   try {
     const products = await Products.find()
       .select("_id title author status createdAt")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .exec();
     res.json(products);
   } catch (error) {
     res
@@ -46,7 +45,7 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// 3. 상품 상세 조회 (GET)
+// 3. 상품 상세 조회 (GET) :params 쓰기!!
 router.get("/products/:productsId", async (req, res) => {
   try {
     const products = await Products.findById(req.params.productsId).select(
@@ -69,13 +68,13 @@ router.get("/products/:productsId", async (req, res) => {
 // 4,  상품 수정 (PUT)
 router.delete("/products/:productsId", async (req, res) => {
   try {
+    const { title, content, password, status } = req.body;
     if (!req.body || !req.params) {
       return res
         .status(400)
         .json({ errorMessage: "데이터 형식이 올바르지 않습니다." });
     }
 
-    const { title, content, password, status } = req.body;
     const products = await Products.findById(req.params.productsId);
 
     if (!products) {
