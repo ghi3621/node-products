@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import connect from "./schemas/index.js";
-import productsRouter from "./routes/products.router.js";
+import router from "./routes/products.router.js";
 
 const app = express();
 const PORT = 3000;
@@ -19,7 +19,7 @@ router.get("/", (req, res) => {
   return res.json({ message: "Hi!" });
 });
 
-app.use("/api", [router, productsRouter]);
+app.use("/api", router);
 
 app.listen(PORT, () => {
   console.log(PORT, "포트로 서버가 열렸어요!");
