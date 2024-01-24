@@ -49,7 +49,7 @@ router.get("/products", async (req, res) => {
 router.get("/products/:productsId", async (req, res) => {
   try {
     const products = await Products.findById(req.params.productsId).select(
-      "_id title author status createdAt"
+      "_id title author status createdAt",
     );
 
     if (!products) {

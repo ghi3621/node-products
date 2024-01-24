@@ -24,7 +24,7 @@ const ProductsSchema = new mongoose.Schema(
       default: "FOR_SALE",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
   // createdAt: {
   //   type: Date,
   //   required: false,
