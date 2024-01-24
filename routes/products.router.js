@@ -22,7 +22,7 @@ router.post("/products", async (req, res) => {
     });
 
     await newProducts.save();
-    res.status(201).json({ errorMessage: "판매 상품을 등록하였습니다." });
+    res.status(201).json({ Message: "판매 상품을 등록하였습니다." });
   } catch (error) {
     res
       .status(500)
@@ -49,7 +49,7 @@ router.get("/products", async (req, res) => {
 router.get("/products/:productsId", async (req, res) => {
   try {
     const products = await Products.findById(req.params.productsId).select(
-      "_id title author status createdAt",
+      "_id title author status createdAt"
     );
 
     if (!products) {
@@ -94,7 +94,7 @@ router.delete("/products/:productsId", async (req, res) => {
     products.status = status;
 
     await products.save();
-    res.json({ message: "상품 정보를 수정하였습니다." });
+    res.json({ Message: "상품 정보를 수정하였습니다." });
   } catch (error) {
     res
       .status(500)
@@ -128,7 +128,7 @@ router.put("/products/:productsId", async (req, res) => {
     }
 
     await products.deleteOne({ id: productsId });
-    res.json({ message: "상품을 삭제하였습니다." });
+    res.json({ Message: "상품을 삭제하였습니다." });
   } catch (error) {
     res
       .status(500)
